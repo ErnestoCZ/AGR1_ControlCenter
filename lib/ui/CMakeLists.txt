@@ -1,0 +1,8 @@
+SET(SOURCES ui_comp_devicelistitem.c
+    ui_comp.c
+    ui_Screen.c
+    ui.c
+    ui_comp_hook.c
+    ui_helpers.c)
+
+add_library(ui ${SOURCES})
