@@ -7,11 +7,11 @@
 #include <mbed.h>
 #include <Thread.h>
 #include <Mutex.h>
-#include <EventQueue.h>
-#include "ui.h"
 #include "custom_typedefs.h"
 #include <string.h>
-#define LED_INTENSITY 30
+#include "ui.h"
+  
+constexpr uint8_t LED_INTENSITY = 15;
 
 //states
 connection_status_t connection_status;
@@ -23,11 +23,10 @@ Arduino_GigaDisplayTouch touchDetector;
 GigaDisplayRGB rgb_led;
 
 //OS relevant structures
-events::EventQueue myQueue(32*EVENTS_EVENT_SIZE);
 rtos::Thread status_thread;
-rtos::Thread ui_thread;
-rtos::Thread queue_thread;
 rtos::Mutex mutex;
+
+WiFiClient client;
 
 
 void status_thread_handler(void){
@@ -48,38 +47,34 @@ void status_thread_handler(void){
     rtos::ThisThread::sleep_for(2000);
   }
 }
-void ui_thread_handler(void){
-  while(true){
-    lv_timer_handler();
-  }
-}
 
 void connectToPreferredWifi(const char* ssid, const char* pass);
 
 static char ssid[] = SECRET_SSID;
 static char pass[] = SECRET_PW;
-
+// auto event = myQueue.make
 void setup() {
 
   delay(1000);
   rgb_led.begin();
   status_thread.start(status_thread_handler);
-  queue_thread.start(callback(&myQueue, &events::EventQueue::dispatch_forever));
 
   Serial.begin(9600);
 
-  while (!Serial) {
-  };
-
   if (WiFi.status() == WL_NO_MODULE) {
     Serial.println("Communication with the WiFi module failed");
-    while (true)
-      ;
+    while (true);
   }
-  WiFi.setHostname("AGR1_ControlCenter");
+  // WiFi.setHostname("AGR1_ControlCenter");
 
-  // myQueue.event(connectToPreferredWifi,ssid,pass);
-  connectToPreferredWifi(ssid,pass);
+  // connectToPreferredWifi(ssid,pass);
+
+  if(connection_status.wifi_status == WL_CONNECTED){
+    client.connect("rapidapi.com",80);
+
+    Serial.println("Connected!");
+
+  }
 
   if (!Display.begin()) {
     Serial.println("Display initialized");
@@ -87,13 +82,14 @@ void setup() {
   if (touchDetector.begin()) {
     Serial.println("TouchDetector initialized");
   }
+  
 
   ui_init();
-  ui_thread.start(ui_thread_handler);
 
 }
 
 void loop() {
+  lv_timer_handler();
   // put your main code here, to run repeatedly:
 }
 
@@ -115,11 +111,12 @@ void connectToPreferredWifi(const char* ssid, const char* pass) {
           Serial.print("Trying to connect to preferred network...");
           Serial.println(connectionAttempts);
           connectionAttempts++;
-          delay(1000);
+          delay(500);
         };
         if (WiFi.status() == WL_CONNECTED) {
           Serial.print("Connected to Network : ");
           Serial.println(WiFi.SSID(currentNetwork));
+          connection_status.wifi_status = WL_CONNECTED;
         }
       }
     }
