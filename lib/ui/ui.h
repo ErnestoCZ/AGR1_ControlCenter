@@ -10,11 +10,13 @@
 #if __has_include("button.h")
 #endif
 
-
 #ifdef __cplusplus
 extern "C" {
+#endif
+
 void ui_init(void);
-extern void searchWifiDevices(void);
+
+#ifdef __cplusplus
 }
 #endif
 
