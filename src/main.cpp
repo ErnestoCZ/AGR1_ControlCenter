@@ -10,7 +10,6 @@
 #include "custom_typedefs.h"
 #include <string.h>
 #include "ui.h"
-  
 constexpr uint8_t LED_INTENSITY = 15;
 
 //states
@@ -24,10 +23,18 @@ GigaDisplayRGB rgb_led;
 
 //OS relevant structures
 rtos::Thread status_thread;
+rtos::Thread gui_thread;
 rtos::Mutex mutex;
 
 WiFiClient client;
+void connectToPreferredWifi(const char* ssid, const char* pass);
 
+void gui_thread_task(void){
+
+    while(true){
+      lv_timer_handler();
+    }
+}
 
 void status_thread_handler(void){
   if(Serial) Serial.println("Status Thread started!");
@@ -43,12 +50,11 @@ void status_thread_handler(void){
       rgb_led.on(0,LED_INTENSITY,0);
     }else{
       rgb_led.on(LED_INTENSITY,0,0);
+      connectToPreferredWifi(SECRET_SSID,SECRET_PW);
     }
     rtos::ThisThread::sleep_for(2000);
   }
 }
-
-void connectToPreferredWifi(const char* ssid, const char* pass);
 
 static char ssid[] = SECRET_SSID;
 static char pass[] = SECRET_PW;
@@ -60,21 +66,14 @@ void setup() {
   status_thread.start(status_thread_handler);
 
   Serial.begin(9600);
+  while(!Serial);
 
   if (WiFi.status() == WL_NO_MODULE) {
     Serial.println("Communication with the WiFi module failed");
     while (true);
   }
-  // WiFi.setHostname("AGR1_ControlCenter");
-
-  // connectToPreferredWifi(ssid,pass);
-
-  if(connection_status.wifi_status == WL_CONNECTED){
-    client.connect("rapidapi.com",80);
-
-    Serial.println("Connected!");
-
-  }
+  WiFi.setHostname("AGR1_ControlCenter");
+  connectToPreferredWifi(ssid,pass);
 
   if (!Display.begin()) {
     Serial.println("Display initialized");
@@ -85,11 +84,11 @@ void setup() {
   
 
   ui_init();
+  gui_thread.start(gui_thread_task);
 
 }
 
 void loop() {
-  lv_timer_handler();
   // put your main code here, to run repeatedly:
 }
 
