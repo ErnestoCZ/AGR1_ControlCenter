@@ -64,7 +64,6 @@ void setup() {
   status_thread.start(status_thread_handler);
 
   Serial.begin(9600);
-  while(!Serial);
 
   if (WiFi.status() == WL_NO_MODULE) {
     Serial.println("Communication with the WiFi module failed");
