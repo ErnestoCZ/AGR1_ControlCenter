@@ -1,6 +1,7 @@
 #include "arduino_secrets.h"
 #include <Arduino.h>
 #include <Arduino_GigaDisplayTouch.h>
+#include <Arduino_GigaDisplay.h>
 #include <Arduino_H7_Video.h>
 #include <GigaDisplayRGB.h>
 #include <mbed.h>
@@ -21,7 +22,11 @@ connection_status_t connection_status;
 // put function declarations here:
 Arduino_H7_Video Display(800, 480);
 Arduino_GigaDisplayTouch touchDetector;
+GigaDisplayBacklight backlight;
 GigaDisplayRGB rgb_led;
+
+
+
 
 //OS relevant structures
 rtos::Thread status_thread, gui_thread;
@@ -37,7 +42,10 @@ void gui_thread_task(void){
 }
 
 void status_thread_handler(void){
-  if(Serial) Serial.println("Status Thread started!");
+  if(Serial) {
+    Serial.println("Status Thread started!");
+
+  }
   while(true){
     //refresh connectivity status
 
@@ -73,11 +81,12 @@ void setup() {
 
   if (!Display.begin()) {
     Serial.println("Display initialized");
+    backlight.begin();
+    backlight.set(100);
   }
   if (touchDetector.begin()) {
     Serial.println("TouchDetector initialized");
   }
-  
 
   ui_init();
   gui_thread.start(gui_thread_task);
